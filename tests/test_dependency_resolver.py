@@ -175,13 +175,17 @@ def test_type_only_policy(resolver: DependencyResolver):
     assert c_init.complete()
 
 def test_optional_types(resolver: DependencyResolver):
-    str_arg = "test"
+    arg_with_optional_typehint = "test"
     int_arg = 1
-    # resolver.add_object(str_arg, "str_arg")
     resolver.add_object(int_arg, "int_arg")
-
 
     args = resolver.resolve_object_kwargs(ObjectWithOptionalTypehint, policy=ResolveByNameAndType)
     with_optional_typehint_init = ObjectWithOptionalTypehint(**args)
     assert with_optional_typehint_init.complete()
-    assert with_optional_typehint_init.
+    assert with_optional_typehint_init.arg_with_optional_typehint == None
+
+    resolver.add_object(arg_with_optional_typehint, "arg_with_optional_typehint")
+    args = resolver.resolve_object_kwargs(ObjectWithOptionalTypehint, policy=ResolveByNameAndType)
+    with_optional_typehint_init = ObjectWithOptionalTypehint(**args)
+    assert with_optional_typehint_init.complete()
+    assert with_optional_typehint_init.arg_with_optional_typehint == arg_with_optional_typehint

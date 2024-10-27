@@ -1,5 +1,6 @@
 
-from typing import Any, Dict
+from typing import Any
+from types import UnionType
 import inspect
 from src.custom_exceptions import DependencyInjectionError
 
@@ -41,15 +42,32 @@ class ResolveByName(Policy):
         return None
 
 class ResolveByNameAndType(Policy):
-    """Resolve by name and type."""
+    """Resolve by name and type - matches on arg name but then validates the type of the found object."""
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
     def resolve(self, arg_name: str, arg_type: type) -> Any:
-        if arg_name in self.available_objects:
-            if isinstance(self.available_objects[arg_name], arg_type):
-                return self.available_objects[arg_name]
+        """
+        Things we want to account for:
+        - Single types (Foo, Bar, Baz, etc...)
+        - Optional types (Foo | None) - # TODO Do we handle this after the resolve?
+        - Union types (Foo | Bar | Baz)
+        - Subclassed types (Foo(Bar))
+        - List types (list[Foo], list[Bar], list[Baz])
+        - Dict types (dict[str, Foo], dict[str, Bar], dict[str, Baz]) loosely (allow different key, values)
+        - Callable types (Callable[[int, str], bool]) (for coroutines)
+        - Coroutine Callable types (Callable[[int, str], Coroutine[Any, Any, bool]])
+        """
 
+        if arg_name in self.available_objects:
+            is_plural_type = arg_type.__class__ is UnionType
+            if not is_plural_type and isinstance(self.available_objects[arg_name], arg_type):
+                return self.available_objects[arg_name]
+            
+            if is_plural_type:
+                if type(self.available_objects[arg_name]) in arg_type.__args__:
+                    return self.available_objects[arg_name]            
+        
             if self.subclass_ok and issubclass(self.available_objects[arg_name], arg_type):
                 # TODO fix this is brittle - breaks when self.available_objects[arg_name] isn't a class
                 return self.available_objects[arg_name]
@@ -94,6 +112,10 @@ class DependencyResolver:
         for param in to_resolve:
             if param.default != inspect._empty:
                 kwargs[param.name] = param.default
+            # check if None is in the union type
+            elif hasattr(param.annotation, '__class__') and param.annotation.__class__ is UnionType:
+                if type(None) in param.annotation.__args__:
+                    kwargs[param.name] = None
             else:
                 raise DependencyInjectionError(f"No value provided for required argument {param.name}, unable to resolve {object.__name__}")
         
