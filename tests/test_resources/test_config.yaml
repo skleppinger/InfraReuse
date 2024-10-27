@@ -1,0 +1,13 @@
+Manager:
+  description: "BigManager"
+  type: "Manager"
+  config_value: "test"
+  sub_managers:
+    - name: "test"
+      description: "test"
+      type: "test"
+      value: "test"
+    - name: "test2"
+      description: "test2"
+      type: "test2"
+      value: "test2"
