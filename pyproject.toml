@@ -9,6 +9,8 @@ readme = "README.md"
 python = ">3.10"
 pytest = "^8.3.3"
 mypy = "^1.13.0"
+typer = "^0.12.5"
+pydantic = "^2.9.2"
 
 
 [build-system]
