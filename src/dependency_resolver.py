@@ -75,14 +75,14 @@ class ResolveByNameAndType(Policy):
         return None
 
 
-class DependencyResolver:
+class DependencyResolver: # Todo make a singleton?
     def __init__(self):
-        self._object_bag = {}
+        self._object_bag: dict[str, Any] = {"_resolver": self}
 
     def resolve(self):
         pass
 
-    def resolve_object_kwargs(self, object: type, skip_args: tuple[str] = (), policy: Policy = ResolveByNameAndType, subclass_ok: bool = True):
+    def resolve_object_kwargs(self, object: type, skip_args: tuple[str] = (), policy: Policy = ResolveByNameAndType, subclass_ok: bool = True, additional_objects: dict[str, Any] = {}):
         """
         Resolve the arguments of an object.
 
@@ -94,14 +94,21 @@ class DependencyResolver:
         signature = inspect.signature(object)
         to_resolve = []
 
+        available_objects = self._object_bag.copy()
+        available_objects.update(additional_objects)
+
         for param in signature.parameters.values(): # How to get parent classes args/kwargs?
             if param.name in skip_args:
                 continue
             if param.kind in (param.VAR_KEYWORD, param.VAR_POSITIONAL):
                 continue
+            if param.annotation == self.__class__:
+                # Only resolve the resolver once, it's a singleton
+                kwargs[param.name] = self
+                continue
 
             # check if policy can find the value
-            value = policy(subclass_ok=subclass_ok, available_objects=self._object_bag).resolve(arg_name=param.name, arg_type=param.annotation) 
+            value = policy(subclass_ok=subclass_ok, available_objects=available_objects).resolve(arg_name=param.name, arg_type=param.annotation) 
             if value is not None:
                 kwargs[param.name] = value
             else:

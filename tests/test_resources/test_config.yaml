@@ -1,13 +1,17 @@
 Manager:
-  description: "BigManager"
-  type: "Manager"
-  config_value: "test"
-  sub_managers:
-    - name: "test"
-      description: "test"
-      type: "test"
-      value: "test"
-    - name: "test2"
-      description: "test2"
-      type: "test2"
-      value: "test2"
+  test_manager: src.components.test_manager:TestManager
+
+GlobalConfig:
+  verbose: true
+  log_level: DEBUG
+  log_file: logs/application.log
+
+TestManager:
+  test_component:
+    module: src.components.test_component:TestComponent
+    enabled: true
+    config:
+      foo: 1
+      bar: "tt"
+      baz: true
+    
