@@ -21,13 +21,14 @@ class CustomApplication(ABC):
         self._resolver = DependencyResolver()
         self._global_config = None
         self._local_config = None
+        self.managers = []
 
         self.configured = False
 
     def parse_arguments(self):
         pass
 
-    def load_managers(self):
+    def load_managers(self) -> None:
         if "Managers" not in self._global_config:
             return
 
@@ -36,6 +37,7 @@ class CustomApplication(ABC):
             required_args = self._resolver.resolve_object_kwargs(manager_class, policy=ResolveByNameAndType)
             manager = manager_class(**required_args, _global_config=self._global_config)
             self._resolver.add_object(manager, manager_name)
+            self.managers.append(manager)
 
     @app.command()
     def configure(self, config_path: Path | str | None = None, **kwargs):

@@ -1,8 +1,19 @@
 
-from typing import Any
+from typing import Any, GenericAlias
 from types import UnionType
 import inspect
 from src.custom_exceptions import DependencyInjectionError
+
+class ConfigArg:
+    """An argument that is passed in from the config, to match the python signature method."""
+    def __init__(self, name: str, annotation: type, default: Any = None, required: bool = False, help: str = ""):
+        self.name = name
+        self.annotation = annotation
+        self.kind = "CONFIG"
+        self.default = default
+
+    def __repr__(self):
+        return f"ConfigArg(name={self.name}, annotation={self.annotation}, default={self.default})"
 
 class Policy:
     """Base class for all resolution policies."""
@@ -61,7 +72,14 @@ class ResolveByNameAndType(Policy):
 
         if arg_name in self.available_objects:
             is_plural_type = arg_type.__class__ is UnionType
-            if not is_plural_type and isinstance(self.available_objects[arg_name], arg_type):
+            is_generic_type = arg_type.__class__ is GenericAlias
+            if not is_plural_type and not is_generic_type and isinstance(self.available_objects[arg_name], arg_type):
+                return self.available_objects[arg_name]
+            
+            if is_generic_type and isinstance(self.available_objects[arg_name], arg_type.__origin__):
+                # Mostly a check for dicts with typehinted keys and values
+                # if len(arg_type.__args__) == 2 and isinstance(self.available_objects[arg_name], dict):
+                # TODO check if the keys and values are the correct types - needs to work with Union types
                 return self.available_objects[arg_name]
             
             if is_plural_type:
@@ -97,11 +115,23 @@ class DependencyResolver: # Todo make a singleton?
         available_objects = self._object_bag.copy()
         available_objects.update(additional_objects)
 
-        for param in signature.parameters.values(): # How to get parent classes args/kwargs?
+        config = getattr(object, "CONFIG", {})
+        config = config.model_fields if config else {}
+        config_req = []
+        for config_arg in config.items():
+            # todo default factory
+            config_arg = ConfigArg(name=config_arg[0], annotation=config_arg[1].annotation, default=config_arg[1].default, 
+                                required=config_arg[1].is_required, help=config_arg[1].description or config_arg[0])
+            config_req.append(config_arg)
+        
+        all_params = list(signature.parameters.values())
+        all_params.extend(config_req)
+
+        for param in all_params: # How to get parent classes args/kwargs?
             if param.name in skip_args:
                 continue
-            if param.kind in (param.VAR_KEYWORD, param.VAR_POSITIONAL):
-                continue
+            if param.kind in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL):
+                continue # TODO handle kwargs in the future, and args
             if param.annotation == self.__class__:
                 # Only resolve the resolver once, it's a singleton
                 kwargs[param.name] = self
