@@ -1,0 +1,10 @@
+Managers:
+  test_manager: tests.test_application.application_test:TestManager
+
+TestManager:
+  test_component:
+    module: tests.test_application.application_test:TestComponent
+    enabled: true
+    foo: 1
+    bar: 2
+    baz: 3
