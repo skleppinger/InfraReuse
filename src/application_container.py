@@ -1,18 +1,18 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from pathlib import Path
-from logging import Logger
 from src.dependency_resolver import DependencyResolver, ResolveByNameAndType
-import signal
 import src.factory as factory
 import typer
 import pydantic
 import yaml
 from src.custom_exceptions import DependencyInjectionError
 
+
 class CustomApplication(ABC):
     """
     Default application container for a general app.  Uses some standardized config parsing, command line parsing, and run methods.
     """
+
     _application_arguments: typer.Typer
     _application_config: pydantic.BaseModel
     app = typer.Typer()
@@ -34,7 +34,9 @@ class CustomApplication(ABC):
 
         for manager_name, manager_class in self._global_config["Managers"].items():
             manager_class = factory.load_classes([{"module": manager_class}])[0]
-            required_args = self._resolver.resolve_object_kwargs(manager_class, policy=ResolveByNameAndType)
+            required_args = self._resolver.resolve_object_kwargs(
+                manager_class, policy=ResolveByNameAndType
+            )
             manager = manager_class(**required_args, _global_config=self._global_config)
             self._resolver.add_object(manager, manager_name)
             self.managers.append(manager)
@@ -56,14 +58,13 @@ class CustomApplication(ABC):
 
         # bind everything in the resolver
 
-        # 
+        #
 
         # TODO validate the individual config elements?
 
         self.configured = True
-        
 
-    def get_object(self, requested_class: type, missing_ok: bool=True):
+    def get_object(self, requested_class: type, missing_ok: bool = True):
         if self.injector is None:
             raise AttributeError("Injector not initialized")
         try:
@@ -73,7 +74,7 @@ class CustomApplication(ABC):
                 return None
             else:
                 raise e
-            
+
     def validate_config(self, config: dict, surpress_warnings: bool) -> None:
         pass
 

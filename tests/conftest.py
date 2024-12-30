@@ -1,7 +1,6 @@
 # Import pytest
 from __future__ import annotations
 
-from pathlib import Path
 
 # Define a global variable to track the order of execution
 execution_order = []
