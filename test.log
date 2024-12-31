@@ -1,0 +1,2 @@
+2024-12-31 08:04:29,226 <MainThread>     INFO | Test message (test_custom_logger.py:27)
+2024-12-31 08:05:49,200 - ERROR - test

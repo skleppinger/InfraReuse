@@ -203,5 +203,5 @@ class DependencyResolver:  # Todo make a singleton?
 
         return kwargs
 
-    def add_object(self, object_instance: Any, name: str):
+    def add_object(self, object_instance: Any, name: str) -> None:
         self._object_bag[name] = object_instance
