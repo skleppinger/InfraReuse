@@ -54,9 +54,9 @@ class TestCustomModelValidationConfig(BaseModel):
 class TestComponent(ConfigurableApplicationComponent):
     CONFIG = TestConfig
 
-    def __init__(self, config: dict[str, Any]) -> None:
-        super().__init__(config)
-        self.apply_config(config)
+    def __init__(self, **kwargs: dict[str, Any]) -> None:
+        super().__init__(**kwargs)
+        self.apply_config(kwargs)
 
 
 class TestNestedComponent(TestComponent):
@@ -69,7 +69,7 @@ class DoubleNestedComponent(TestNestedComponent):
 
 def test_component():
     config = {"foo": 1, "bar": "baz", "baz": True}
-    component = TestComponent(config)
+    component = TestComponent(**config)
     assert component.params.foo == 1
     assert component.params.bar == "baz"
     assert component.params.baz is True
@@ -81,7 +81,7 @@ def test_nested_component():
         "quux": "quuz",
         "baz2": {"foo": 3, "bar": "quuz2", "baz": False},
     }
-    component = TestNestedComponent(config)
+    component = TestNestedComponent(**config)
     assert component.params.qux == 2
     assert component.params.quux == "quuz"
     assert component.params.baz2.foo == 3
@@ -99,7 +99,7 @@ def test_double_nested_component():
             "baz2": {"foo": 6, "bar": "quuz5", "baz": False},
         },
     }
-    component = DoubleNestedComponent(config)
+    component = DoubleNestedComponent(**config)
     assert component.params.qux2 == 4
     assert component.params.quux2 == "quuz3"
     assert component.params.baz3.qux == 5
@@ -115,14 +115,14 @@ def test_optional_list_config_entry():
         CONFIG = TestOptionalListConfig
 
     config = {"foo": [1, 2, 3], "baz": [True, False, True]}
-    component = TestOptionalListComponent(config)
+    component = TestOptionalListComponent(**config)
     assert component.params.foo == [1, 2, 3]
     assert component.params.baz == [True, False, True]
     assert component.params.bar is None
 
     # Test if we don't have a default arg
     config2 = {"foo": [1, 2, 3], "baz": None, "bar": None}
-    component2 = TestOptionalListComponent(config2)
+    component2 = TestOptionalListComponent(**config2)
     assert component2.params.foo == [1, 2, 3]
     assert component2.params.baz is None
     assert component2.params.bar is None
@@ -130,7 +130,7 @@ def test_optional_list_config_entry():
     # Test failure is reported if no value is provided
     config3 = {"foo": [1, 2, 3]}
     with pytest.raises(ValidationError):
-        TestOptionalListComponent(config3)
+        TestOptionalListComponent(**config3)
 
 
 def test_with_custom_enum_config_entry():
@@ -139,14 +139,14 @@ def test_with_custom_enum_config_entry():
         CONFIG = TestCustomEnumConfig
 
     config = {"foo": TestEnum.FOO, "bar": [TestEnum.BAR, TestEnum.FOO]}
-    component = TestCustomEnumComponent(config)
+    component = TestCustomEnumComponent(**config)
     assert component.params.foo == TestEnum.FOO
     assert component.params.bar == [TestEnum.BAR, TestEnum.FOO]
 
     # Test failure is reported if an invalid value is provided
     config2 = {"foo": "invalid", "bar": [TestEnum.BAR, TestEnum.FOO]}
     with pytest.raises(ValidationError):
-        TestCustomEnumComponent(config2)
+        TestCustomEnumComponent(**config2)
 
 
 def test_with_custom_model_validation():
@@ -155,9 +155,9 @@ def test_with_custom_model_validation():
 
     config = {"foo": 11, "bar": "baz"}
     with pytest.raises(ValidationError):
-        TestCustomModelValidationComponent(config)
+        TestCustomModelValidationComponent(**config)
 
     config2 = {"foo": 9, "bar": "baz"}
-    component = TestCustomModelValidationComponent(config2)
+    component = TestCustomModelValidationComponent(**config2)
     assert component.params.foo == 9
     assert component.params.bar == "baz"

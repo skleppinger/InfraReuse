@@ -1,4 +1,4 @@
-from src.logging.custom_logger import (
+from src.logging.logging_helpers import (
     create_file_handler,
     configure_logger_to_sysout,
     add_handler_to_logger,

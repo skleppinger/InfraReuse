@@ -1,5 +1,6 @@
 from abc import ABC
 from pydantic import BaseModel
+from src.base_config import Config
 from typing import Any
 
 
@@ -11,11 +12,9 @@ class ApplicationComponent(ABC):
 
 
 class ConfigurableApplicationComponent(ApplicationComponent):
-    CONFIG: BaseModel
+    CONFIG: Config
 
-    def __init__(
-        self, config: dict[str, Any], **kwargs: dict[str, Any]
-    ) -> None:  # TODO global or local?
+    def __init__(self, **kwargs: dict[str, Any]) -> None:  # TODO global or local?
         super().__init__(**kwargs)  # TODO fix args
         self.CONFIG.model_validate(kwargs)  # TODO validate config
 

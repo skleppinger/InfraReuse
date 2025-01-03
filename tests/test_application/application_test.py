@@ -8,6 +8,9 @@ from typing import Any
 from pathlib import Path
 import src.factory as factory
 from src.base_config import Config
+from src.logging.custom_logger import logger
+import tempfile
+from src.logging.logging_helpers import create_file_handler, add_handler_to_logger
 
 
 class FailingConfig(Config):
@@ -33,6 +36,17 @@ class TestComponent(ConfigurableApplicationComponent):
         super().__init__(**kwargs)
         self.params = self.CONFIG.model_validate(kwargs)
         print(self.params)
+
+        # Make sure logging is working for the application, repeat of custom logger test
+        self._logger = logger
+        temp_dir = tempfile.gettempdir()
+        temp_file = Path(temp_dir + "/test.log")
+        handle = create_file_handler(temp_file)
+        add_handler_to_logger(self._logger, handle)
+        self._logger.info("TestComponent initialized")
+        self._logger.info(f"TestComponent params: {self.params}")
+        assert Path(temp_file.name).exists()
+        assert Path(temp_file.name).stat().st_size > 0
 
 
 class TestManager(ApplicationComponent):
@@ -64,7 +78,7 @@ class TestManager(ApplicationComponent):
                 component_class.validate_config(
                     required_kwargs, surpress_warnings=False
                 )
-            component = component_class(**required_kwargs, config={})
+            component = component_class(**required_kwargs)
             self.resolver.add_object(component, component_name)
             components.append(component)
         return components
